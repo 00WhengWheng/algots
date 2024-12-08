@@ -3,9 +3,9 @@ from dash import html, dcc, callback, Input, Output, State
 import plotly.graph_objs as go
 from datetime import datetime, timedelta
 import pandas as pd
-from ..config.strategy_config import STRATEGY_REGISTRY
-from ..backtesting.backtest import Backtester
-from ..data.data_fetcher import DataFetcher
+from config.strategy_config import STRATEGY_REGISTRY
+from backtesting.backtest import Backtester
+from data.data_fetcher import DataFetcher
 
 app = dash.Dash(__name__)
 
@@ -172,3 +172,88 @@ def run_backtest(n_clicks, strategy_name, symbol, start_date, end_date, timefram
 
 if __name__ == '__main__':
     app.run_server(debug=True)
+
+# Add new section to the layout
+html.Div([
+    html.H2('Data Management'),
+    
+    # Data Collection Controls
+    html.Div([
+        html.Label('Symbol:'),
+        dcc.Input(id='collect-symbol-input', value='BTC/USD', type='text'),
+        
+        html.Label('Source:'),
+        dcc.Dropdown(
+            id='data-source-selector',
+            options=[
+                {'label': 'Alpha Vantage', 'value': 'alpha_vantage'},
+                {'label': 'Exchange', 'value': 'exchange'},
+                {'label': 'Quandl', 'value': 'quandl'}
+            ],
+            value='exchange'
+        ),
+        
+        html.Label('Timeframe:'),
+        dcc.Dropdown(
+            id='collect-timeframe-selector',
+            options=[
+                {'label': '1 minute', 'value': '1m'},
+                {'label': '5 minutes', 'value': '5m'},
+                {'label': '15 minutes', 'value': '15m'},
+                {'label': '1 hour', 'value': '1h'},
+                {'label': '4 hours', 'value': '4h'},
+                {'label': '1 day', 'value': '1d'}
+            ],
+            value='1h'
+        ),
+        
+        html.Button('Collect Data', id='collect-data-button', n_clicks=0),
+    ]),
+    
+    # Data Preview
+    html.Div([
+        dcc.Graph(id='data-preview-chart'),
+        html.Div(id='data-info')
+    ])
+]),
+
+# Add callback for data collection
+@app.callback(
+    [Output('data-preview-chart', 'figure'),
+     Output('data-info', 'children')],
+    Input('collect-data-button', 'n_clicks'),
+    [State('collect-symbol-input', 'value'),
+     State('data-source-selector', 'value'),
+     State('collect-timeframe-selector', 'value')]
+)
+def collect_and_preview_data(n_clicks, symbol, source, timeframe):
+    if n_clicks == 0:
+        return {}, []
+    
+    data_fetcher = DataFetcher()
+    data = data_fetcher.update_dataset(symbol, source, timeframe)
+    
+    if data is None:
+        return {}, html.Div('Error collecting data', style={'color': 'red'})
+    
+    # Create OHLCV chart
+    fig = go.Figure(data=[
+        go.Candlestick(
+            x=data.index,
+            open=data['Open'],
+            high=data['High'],
+            low=data['Low'],
+            close=data['Close']
+        )
+    ])
+    
+    # Data information display
+    info = html.Div([
+        html.H4('Dataset Information'),
+        html.P(f'Symbol: {symbol}'),
+        html.P(f'Timeframe: {timeframe}'),
+        html.P(f'Date Range: {data.index[0]} to {data.index[-1]}'),
+        html.P(f'Number of Candles: {len(data)}')
+    ])
+    
+    return fig, info

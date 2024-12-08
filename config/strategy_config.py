@@ -1,4 +1,11 @@
 from typing import Dict, Any
+from strategies.adaptive_moving_average import AdaptiveMovingAverage
+from strategies.delta_neutral_hedging import DeltaNeutralHedging
+from strategies.mean_reversion import MeanReversion
+from strategies.momentum_trading import MomentumTrading
+from strategies.moving_average_crossover import MovingAverageCrossover
+from strategies.statistical_arbitrage import StatisticalArbitrage
+# Import all other strategy classes
 
 STRATEGY_REGISTRY = {
     'ADAPTIVE_MOVING_AVERAGE': {

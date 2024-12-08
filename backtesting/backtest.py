@@ -162,3 +162,36 @@ class Backtester:
         rolling_max = equity_curve.expanding().max()
         drawdowns = equity_curve / rolling_max - 1
         return drawdowns.min() * 100
+
+# Add to existing Backtester class:
+
+def test_strategy(self, strategy_name: str, synthetic: bool = False):
+    """
+    Test a strategy using either synthetic or real market data
+    
+    Args:
+        strategy_name: Name of the strategy to test
+        synthetic: If True, use synthetic data generation from strategy
+    """
+    if synthetic:
+        # Generate synthetic data as shown in adaptive_moving_average.py
+        np.random.seed(42)
+        data = pd.Series(100 + np.cumsum(np.random.normal(0, 1, 300)))
+        
+    strategy = self.strategy_loader.load_strategy(strategy_name)
+    results = self.run(strategy_name, data)
+    
+    # Plot results using strategy's plotting capabilities
+    plt.figure(figsize=(12, 6))
+    plt.subplot(2, 1, 1)
+    plt.plot(data, label='Price', alpha=0.7)
+    plt.plot(results['signals'], label='Strategy Signals', color='orange')
+    plt.legend()
+    plt.title(f'{strategy_name} Strategy Test')
+    
+    plt.subplot(2, 1, 2)
+    plt.plot(results['equity_curve'], label='Equity Curve', color='green')
+    plt.legend()
+    plt.show()
+    
+    return results
