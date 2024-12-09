@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
 import random
-from ..utils.base_strategy import BaseStrategy
 
-class GeneticAlgorithms(BaseStrategy):
+
+class GeneticAlgorithms:
     def __init__(self, pop_size=50, num_generations=100, num_top_strategies=10, mutation_rate=0.1, 
                  short_window_range=(5, 50), long_window_range=(50, 200)):
         super().__init__()

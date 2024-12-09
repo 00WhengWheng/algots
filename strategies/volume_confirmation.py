@@ -1,11 +1,12 @@
 import pandas as pd
 import numpy as np
-from ..utils.base_strategy import BaseStrategy
-from ..indicators.volume import obv
-from ..indicators.volatility import bollinger_bands, atr
-from ..indicators.momentum import rsi
 
-class VolumeConfirmation(BaseStrategy):
+from .indicators.volume.on_balance_volume import on_balance_volume as obv
+from .indicators.volatility.bollinger_bands import bollinger_bands
+from .indicators.volatility.average_true_range import average_true_range as atr
+from .indicators.momentum.relative_strength_index import relative_strength_index as rsi
+
+class VolumeConfirmation:
     def __init__(self, bb_period=20, bb_std=2, atr_period=14, rsi_period=14):
         super().__init__()
         self.bb_period = bb_period

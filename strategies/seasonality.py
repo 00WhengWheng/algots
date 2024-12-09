@@ -1,8 +1,8 @@
 import pandas as pd
-from ..utils.base_strategy import BaseStrategy
-from ..patterns.trend_patterns import detect_double_top
 
-class Seasonality(BaseStrategy):
+from .patterns.technical.double_top import detect_double_top
+
+class Seasonality:
     def __init__(self, target_month: int):
         self.target_month = target_month
     required_patterns = ['Double_Top']

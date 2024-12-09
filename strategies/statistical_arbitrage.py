@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
-from ..utils.base_strategy import BaseStrategy
+
 from statsmodels.tsa.stattools import coint
 
-class StatisticalArbitrage(BaseStrategy):
+class StatisticalArbitrage:
     def __init__(self, lookback_period: int = 60, z_score_threshold: float = 2.0):
         self.lookback_period = lookback_period
         self.z_score_threshold = z_score_threshold

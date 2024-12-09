@@ -1,11 +1,11 @@
 import pandas as pd
 import numpy as np
-from ..utils.base_strategy import BaseStrategy
-from ..indicators.volatility import atr, bollinger_bands
-from ..indicators.momentum import rsi
-from ..patterns.candlestick import CandlestickPatterns
 
-class VolatilityBased(BaseStrategy):
+from .indicators.volatility.bollinger_bands import bollinger_bands
+from .indicators.volatility.average_true_range import average_true_range as atr
+from .indicators.momentum.relative_strength_index import relative_strength_index as rsi
+
+class VolatilityBased:
     def __init__(self, atr_period: int = 14, bb_period: int = 20, bb_std: float = 2.0, rsi_period: int = 14):
         self.atr_period = atr_period
         self.bb_period = bb_period

@@ -1,8 +1,8 @@
 import pandas as pd
-from ..utils.base_strategy import BaseStrategy
-from ..patterns.trend_patterns import detect_double_top
 
-class OrderFlowAnalysis(BaseStrategy):
+from .patterns.technical.double_top import detect_double_top
+
+class OrderFlowAnalysis:
     def __init__(self, buy_volume_col: str = 'Buy_Volume', sell_volume_col: str = 'Sell_Volume'):
         self.buy_volume_col = buy_volume_col
         self.sell_volume_col = sell_volume_col

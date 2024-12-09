@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
-from ..utils.base_strategy import BaseStrategy
-from ..indicators.volatility import bollinger_bands, atr
-from ..indicators.momentum import rsi
 
-class VolatilityBreakout(BaseStrategy):
+from .indicators.volatility.bollinger_bands import bollinger_bands
+from .indicators.volatility.average_true_range import average_true_range as atr
+from .indicators.momentum.relative_strength_index import relative_strength_index as rsi
+
+class VolatilityBreakout:
     def __init__(self, bb_period=20, bb_std=2, atr_period=14, rsi_period=14):
         super().__init__()
         self.bb_period = bb_period
@@ -14,7 +15,7 @@ class VolatilityBreakout(BaseStrategy):
         self.latest_volatility_value = None
         self.account_balance = 100000  # Initialize as needed
         self.risk_per_trade = 0.02  # 2% risk per trade
-    required_patterns = ['Bollinger_Bands']
+    required_patterns = ['bollinger_bands', 'atr', 'rsi']
 
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         """

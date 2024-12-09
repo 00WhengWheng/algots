@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
 from scipy.optimize import minimize
-from ..utils.base_strategy import BaseStrategy
 
-class MeanVarianceOptimization(BaseStrategy):
+
+class MeanVarianceOptimization:
     def __init__(self, risk_free_rate: float = 0.01, target_return: float = None):
         self.risk_free_rate = risk_free_rate
         self.target_return = target_return

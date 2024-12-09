@@ -1,8 +1,12 @@
+from .indicators.volume.volume_weighted_average_price import calculate_vwap as vwap
+from .patterns.technical.head_and_shoulders import head_and_shoulders
 import pandas as pd
 import numpy as np
-from ..utils.base_strategy import BaseStrategy
-from ..indicators.volume import vwap
-from ..patterns.trend_patterns import detect_head_and_shoulders
+
+from .base_strategy import BaseStrategy
+
+from .indicators.volume.volume_weighted_average_price import calculate_vwap
+from .patterns.technical.head_and_shoulders import head_and_shoulders
 
 class VWAPTWAP(BaseStrategy):
     def __init__(self, vwap_period=20, twap_period=20, rsi_period=14, atr_period=14):
@@ -13,7 +17,7 @@ class VWAPTWAP(BaseStrategy):
         self.twap_period = twap_period
         self.rsi_period = rsi_period
         self.atr_period = atr_period
-    required_patterns = ['Head_and_Shoulders_Pattern']
+    required_patterns = ['head_and_shoulders']
 
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -27,10 +31,7 @@ class VWAPTWAP(BaseStrategy):
 
         # Calculate RSI
         delta = data['Close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=self.rsi_period).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=self.rsi_period).mean()
-        rs = gain / loss
-        data['RSI'] = 100 - (100 / (1 + rs))
+
 
         # Calculate ATR
         high_low = data['High'] - data['Low']
@@ -50,7 +51,7 @@ class VWAPTWAP(BaseStrategy):
             (data['Close'] > data['VWAP']) & 
             (data['Close'] > data['TWAP']) & 
             (data['RSI'] < 70) & 
-            (~data['Head_and_Shoulders_Pattern'])
+            (~data['head_and_shoulders'])
         )
         data.loc[buy_condition, 'Signal'] = 1
 
@@ -63,6 +64,9 @@ class VWAPTWAP(BaseStrategy):
         data.loc[sell_condition, 'Signal'] = -1
         # Update latest close price
         self.latest_close_price = data['Close'].iloc[-1]
+
+        data = calculate_vwap(data, column_close='Close', column_volume='Volume', window=self.vwap_period)
+        data = detect_head_and_shoulders(data, column='Close')
 
         return data
 

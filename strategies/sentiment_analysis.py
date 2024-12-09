@@ -1,7 +1,7 @@
 import pandas as pd
-from ..utils.base_strategy import BaseStrategy
 
-class SentimentAnalysis(BaseStrategy):
+
+class SentimentAnalysis:
     def __init__(self, sentiment_column: str = 'Sentiment', threshold: float = 0.1):
         self.sentiment_column = sentiment_column
         self.threshold = threshold

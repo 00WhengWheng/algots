@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
-from ..utils.base_strategy import BaseStrategy
-from ..indicators.trend import moving_average
-from ..patterns.trend_patterns import detect_head_and_shoulders, detect_double_top
 
-class TrendFollowing(BaseStrategy):
+from .indicators.trend.moving_average import moving_average
+from .patterns.technical.head_and_shoulders import head_and_shoulders
+from .patterns.technical.double_top import detect_double_top
+
+class TrendFollowing:
     def __init__(self, short_period: int = 20, long_period: int = 50, atr_period: int = 14):
         self.short_period = short_period
         self.long_period = long_period

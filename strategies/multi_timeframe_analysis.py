@@ -1,8 +1,8 @@
 import pandas as pd
-from ..utils.base_strategy import BaseStrategy
-from ..indicators.trend import moving_average
 
-class MultiTimeframeAnalysis(BaseStrategy):
+from .indicators.trend.moving_average import moving_average 
+
+class MultiTimeframeAnalysis:
     def __init__(self, short_period: int = 20, long_period: int = 50, timeframes: list = ["daily", "4h", "1h"]):
         self.short_period = short_period
         self.long_period = long_period

@@ -1,4 +1,4 @@
-def double_top(high_prices, threshold=0.02):
+def detect_double_top(high_prices, threshold=0.02):
     """
     Identify Double Top patterns (Reversal).
 
@@ -9,9 +9,9 @@ def double_top(high_prices, threshold=0.02):
     Returns:
         list: Indices where Double Top patterns are detected.
     """
-    pattern_indices = []
+    double_top = []
     for i in range(2, len(high_prices) - 1):
         if abs(high_prices[i - 1] - high_prices[i]) / high_prices[i - 1] < threshold:
             if high_prices[i - 2] > high_prices[i - 1] and high_prices[i] > high_prices[i + 1]:
-                pattern_indices.append(i)
-    return pattern_indices
+                double_top.append(i)
+    return double_top

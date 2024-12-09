@@ -1,10 +1,11 @@
 # src/strategies/ma_crossover.py
 
-from .base_strategy import BaseStrategy
+
 import pandas as pd
 import numpy as np
 from typing import Dict, Any
 import logging
+from .base_strategy import BaseStrategy
 
 logger = logging.getLogger(__name__)
 

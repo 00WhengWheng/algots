@@ -1,10 +1,14 @@
 # src/strategies/volume_weighted_momentum.py
-
-from .base_strategy import BaseStrategy
 import pandas as pd
-from typing import Dict, Any
-from ..indicators.volume import vwap
+import numpy as np
 import logging
+from typing import Dict, Any
+from .indicators.volume.volume_weighted_average_price import calculate_vwap as vwap
+from .base_strategy import BaseStrategy
+from .indicators.volume.volume_weighted_average_price import calculate_vwap as vwap
+from .indicators.volume.on_balance_volume import on_balance_volume as obv
+from .indicators.momentum.relative_strength_index import relative_strength_index as rsi
+from .indicators.trend.macd_signal_line import macd_signal_line as macd
 
 logger = logging.getLogger(__name__)
 
@@ -39,33 +43,7 @@ class VolumeWeightedMomentum(BaseStrategy):
         }
     }
 
-    def generate_signals(self, data: pd.DataFrame) -> pd.Series:
-        vwap_series = vwap(data)
-        momentum = data['Close'].pct_change(self.params['momentum_period'])
-        
-        signals = pd.Series(0, index=data.index)
-        threshold = self.params['vwap_threshold']
-        
-        # Generate signals based on VWAP and momentum
-        signals[(data['Close'] > vwap_series * (1 + threshold)) & 
-               (momentum > 0)] = 1
-        signals[(data['Close'] < vwap_series * (1 - threshold)) & 
-               (momentum < 0)] = -1
-        
-        return signals
-
-    def calculate_position_size(self, price: float) -> float:
-        return self.params['initial_capital'] * 0.02 / price  # 2% risk per trade
-
-
-'''
-import pandas as pd
-import numpy as np
-from ..utils.base_strategy import BaseStrategy
-from ..indicators.volume import vwap, on_balance_volume
-from ..indicators.momentum import rsi, macd
-
-class VolumeWeightedMomentum(BaseStrategy):
+class VolumeWeightedMomentum:
     def __init__(self, vwap_period=20, rsi_period=14, macd_fast=12, macd_slow=26, macd_signal=9):
         super().__init__()
         self.account_balance = 100000  # Initialize as needed
@@ -140,5 +118,3 @@ class VolumeWeightedMomentum(BaseStrategy):
     def check_daily_drawdown(self, daily_loss, max_drawdown=0.1):
         allowable_loss = max_drawdown * self.account_balance
         return daily_loss <= allowable_loss
-
-'''

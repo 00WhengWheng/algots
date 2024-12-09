@@ -1,20 +1,22 @@
 import importlib
 from typing import Dict, Any, Optional
-from ..config.strategy_config import STRATEGY_REGISTRY
+from config.strategy_config import STRATEGY_REGISTRY
 
 class StrategyLoader:
     @staticmethod
     def load_strategy(strategy_name: str, parameters: Optional[Dict[str, Any]] = None) -> Any:
         """
         Dynamically loads and instantiates a trading strategy.
-        
+
         Args:
             strategy_name: Name of the strategy as defined in STRATEGY_REGISTRY
             parameters: Optional parameters to override defaults
-            
+
         Returns:
             Instantiated strategy object
         """
+        if strategy_name not in STRATEGY_REGISTRY:
+            raise ValueError(f"Strategy {strategy_name} not found in registry")
         if strategy_name not in STRATEGY_REGISTRY:
             raise ValueError(f"Strategy {strategy_name} not found in registry")
             

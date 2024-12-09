@@ -1,11 +1,10 @@
 # strategies/KeltnerChannel.py
 
 import pandas as pd
-from ..utils.base_strategy import BaseStrategy
-from ..indicators.volatility import atr
-from ..patterns.candlestick import CandlestickPatterns
 
-class KeltnerChannel(BaseStrategy):
+from .indicators.volatility.average_true_range import average_true_range as atr
+
+class KeltnerChannel:
     # Define parameters
     parameters = {
         'atr_period': {

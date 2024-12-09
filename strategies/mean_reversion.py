@@ -1,10 +1,8 @@
 import pandas as pd
-from ..utils.base_strategy import BaseStrategy
-from ..indicators.momentum import rsi
-from ..utils.technical_indicators import TechnicalIndicators
-from ..patterns.candlestick import CandlestickPatterns
 
-class MeanReversion(BaseStrategy):
+from .indicators.momentum.relative_strength_index import relative_strength_index as rsi
+
+class MeanReversion:
     parameters = {
         'rsi_period': {
             'type': 'int',

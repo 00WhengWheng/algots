@@ -1,5 +1,6 @@
 import pandas as pd
-from ..utils.base_strategy import BaseStrategy
+from .base_strategy import BaseStrategy
+
 
 class EventDriven(BaseStrategy):
     def __init__(self, parameters):

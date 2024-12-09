@@ -1,11 +1,11 @@
 import pandas as pd
 import numpy as np
-from ..utils.base_strategy import BaseStrategy
-from ..indicators.momentum import rsi, stochastic_oscillator
-from ..indicators.trend import MovingAverage
-from ..patterns.candlestick import CandlestickPatterns
 
-class MomentumTrading(BaseStrategy):
+from .indicators.momentum.relative_strength_index import relative_strength_index as rsi
+from .indicators.momentum.stochastic_oscillator import stochastic_oscillator 
+from .indicators.trend.moving_average import moving_average as MovingAverage
+
+class MomentumTrading:
     def __init__(self, rsi_period: int = 14, stochastic_period: int = 14, ma_period: int = 50):
         self.rsi_period = rsi_period
         self.stochastic_period = stochastic_period

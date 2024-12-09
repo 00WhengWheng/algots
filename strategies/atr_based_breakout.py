@@ -2,7 +2,9 @@
 
 import pandas as pd
 import numpy as np
+
 from .base_strategy import BaseStrategy
+
 from typing import Dict, Any
 import logging
 

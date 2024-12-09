@@ -1,13 +1,11 @@
 # strategies/gamma_scalping.py
 
 import pandas as pd
-from src.utils.base_strategy import BaseStrategy
-from src.indicators.volatility import atr
-from src.indicators.volume import twap
-from src.patterns.trend_patterns import detect_head_and_shoulders
-from src.utils.options_data_provider import OptionsDataProvider
+from .indicators.volatility.average_true_range import average_true_range as atr
+from .indicators.volume.time_weighted_average_price import time_weighted_average_price as twap
+from .patterns.technical.head_and_shoulders import head_and_shoulders
 
-class GammaScalping(BaseStrategy):
+class GammaScalping:
     # Define parameters
     parameters = {
         'atr_period': {

@@ -1,11 +1,11 @@
 # strategies/DeltaNeutralHedging.py
 
 import pandas as pd
-from ..utils.base_strategy import BaseStrategy
-from ..patterns.trend_patterns import detect_double_top
-from ..indicators.utils import validate_data
 
-class DeltaNeutralHedging(BaseStrategy):
+from .patterns.technical.double_top import detect_double_top
+from .indicators.utils import validate_data
+
+class DeltaNeutralHedging:
     # Define the parameters class variable
     parameters = {
         'delta_threshold': {

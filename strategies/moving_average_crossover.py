@@ -2,9 +2,10 @@
 
 import pandas as pd
 import numpy as np
-from src.indicators.trend import MovingAverage
+from .base_strategy import BaseStrategy
+from .indicators.trend.moving_average import moving_average as ma
 
-class MovingAverageCrossover:
+class MovingAverageCrossover(BaseStrategy):
     """
     Moving Average Crossover strategy implementation.
     """
@@ -71,7 +72,7 @@ class MovingAverageCrossover:
             if param not in self.params:
                 self.params[param] = config['default']
         
-        self.ma_calculator = MovingAverage()
+        self.ma_calculator = ma()
 
     def generate_signals(self, market_data):
         """

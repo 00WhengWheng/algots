@@ -1,4 +1,12 @@
+ccxt
 dash
+dash-bootstrap-components
+matplotlib
 plotly
 pandas
+python-dotenv
+quandl
+scipy
+statsmodels
+yfinance
 numpy
