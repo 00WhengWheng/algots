@@ -5,7 +5,7 @@ def main():
     collector = DataCollector()
     
     # Collect data for all trading pairs
-    for pair in TRADING_PAIRS:
+    for pair in TRADING_ASSET:
         print(f"Collecting data for {pair}")
         
         # Collect daily data

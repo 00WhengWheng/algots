@@ -6,8 +6,8 @@ from typing import Dict, Any
 # from strategies.statistical_arbitrage import StatisticalArbitrage
 # from strategies.trend_following import TrendFollowing
 # from strategies.volume_weighted_momentum import VolumeWeightedMomentum
-from strategies.atr_based_breakout import ATRBasedBreakout
-from strategies.event_driven import EventDriven
+# from strategies.atr_based_breakout import ATRBasedBreakout
+# from strategies.event_driven import EventDriven
 # from strategies.gamma_scalping import GammaScalping
 # from strategies.keltner_channel import KeltnerChannel
 from strategies.ma_crossover import MACrossover
@@ -25,21 +25,21 @@ from strategies.ma_crossover import MACrossover
 # Import all other strategy classes
 
 STRATEGY_REGISTRY = {
-    'ATR_BREAKOUT': {
-        'class': 'ATRBasedBreakout',
-        'module': 'strategies.atr_based_breakout',
-        'parameters': ATRBasedBreakout.parameters
-    },
+    #'ATR_BREAKOUT': {
+    #    'class': 'ATRBasedBreakout',
+    #    'module': 'strategies.atr_based_breakout',
+    #    'parameters': ATRBasedBreakout.parameters
+    #},
     # 'DELTA_NEUTRAL_HEDGING': {
     #     'class': 'DeltaNeutralHedging',
     #     'module': 'strategies.delta_neutral_hedging',
     #     'parameters': DeltaNeutralHedging.parameters
     # },
-    'EVENT_DRIVEN': {
-        'class': 'EventDriven',
-        'module': 'strategies.event_driven',
-        'parameters': EventDriven.parameters
-    },
+    #'EVENT_DRIVEN': {
+    #    'class': 'EventDriven',
+    #    'module': 'strategies.event_driven',
+    #    'parameters': EventDriven.parameters
+    #},
     # 'GAMMA_SCALPING': {
     #     'class': 'GammaScalping',
     #     'module': 'strategies.gamma_scalping',

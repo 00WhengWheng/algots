@@ -19,27 +19,30 @@ class DataFetcher:
         filename = f"data/historical/{source}_{symbol}_{datetime.now().strftime('%Y%m%d')}.csv"
         data.to_csv(filename)
         return filename
-
-    async def fetch_data(self, symbol: str, start_date: str, end_date: str, source: str, interval: str) -> pd.DataFrame:
+            
+    import asyncio
+    
+    def fetch_data_sync(self, symbol, start_date, end_date, source='alpha_vantage', interval='1d'):
         try:
             if source == 'alpha_vantage':
-                return await self.fetch_alpha_vantage_data(symbol, interval, start_date, end_date)
-            elif source == 'quandl':
-                return await self.quandl.get_stock_data(symbol, start_date, end_date)
+                data = asyncio.run(self.alpha_vantage.get_daily_data(symbol, start_date, end_date))
             elif source == 'yfinance':
-                return await self.yfinance.get_data(symbol, interval, start_date, end_date)
-            elif source == 'ccxt':
-                return await self.ccxt.fetch_ohlcv(symbol, interval, start_date, end_date)
+                data = self.yfinance.get_data(symbol, start_date, end_date, interval)
             else:
                 raise ValueError(f"Unsupported data source: {source}")
+            
+            if data is None or data.empty:
+                raise ValueError(f"No data retrieved for {symbol} from {source}")
+            
+            return data
         except Exception as e:
-            print(f"Error fetching data for {symbol} from {source}: {e}")
+            print(f"Error fetching data: {str(e)}")
             return None
 
     async def fetch_alpha_vantage_data(self, symbol: str, interval: str, start_date: str, end_date: str) -> pd.DataFrame:
         try:
             is_crypto = '/' in symbol  # Simple check to determine if it's a cryptocurrency
-    
+
             if is_crypto:
                 if interval != '1d':
                     raise ValueError("Intraday data for cryptocurrencies is not supported by Alpha Vantage")
@@ -49,10 +52,9 @@ class DataFetcher:
                     data = await self.alpha_vantage.get_daily_data(symbol, start_date, end_date)
                 else:
                     data = await self.alpha_vantage.get_intraday_data(symbol, start_date, end_date, interval)
-            
-            if data is not None:
-                # Filter data based on start_date and end_date
-                data = data[(data.index >= start_date) & (data.index <= end_date)]
+
+            if data is None:
+                raise ValueError("No data returned from Alpha Vantage API")
             return data
         except ValueError as e:
             print(f"Error fetching Alpha Vantage data for {symbol} with interval {interval}: {e}")

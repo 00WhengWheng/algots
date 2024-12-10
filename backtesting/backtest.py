@@ -30,32 +30,22 @@ class Backtester:
             strategy_name: str,
             data: pd.DataFrame,
             parameters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """
-        Run backtest for a given strategy and data
-
-        Args:
-            strategy_name: Name of the strategy to test
-            data: Historical price data
-            parameters: Strategy parameters
-        """
         self.reset()
         strategy = self.strategy_loader.load_strategy(strategy_name, parameters)
 
         # Generate signals
         signals_df = strategy.generate_signals(data)
 
+        # Combine data and signals
+        combined_df = data.join(signals_df['Signal'])
+
         # Track performance
-        for i in range(len(signals_df)):
-            current_bar = signals_df.iloc[i]
+        for i in range(len(combined_df)):
+            current_bar = combined_df.iloc[i]
             self._process_bar(current_bar, strategy)
             self.equity_curve.append(self._calculate_total_equity(current_bar))
 
-        results = self._generate_results()
-        results['strategy'] = strategy
-        results['data'] = data
-        results['signals'] = signals_df
-
-        return results
+        return self._generate_results()
 
     def _run_strategy_backtest(self, strategy: BaseStrategy, data: pd.DataFrame, signals_df: pd.DataFrame) -> Dict[str, Any]:
         for i in range(len(signals_df)):
@@ -207,20 +197,18 @@ class Backtester:
         return equity
 
     def _generate_results(self) -> Dict[str, Any]:
-        equity_curve = pd.Series(self.equity_curve)
-        returns = equity_curve.pct_change().dropna()
-        
+        equity_series = pd.Series(self.equity_curve, index=self.data.index)
+        returns = equity_series.pct_change().dropna()
+
         results = {
-            'initial_capital': self.initial_capital,
-            'final_capital': self.equity_curve[-1],
-            'total_return': (self.equity_curve[-1] / self.initial_capital - 1) * 100,
-            'sharpe_ratio': self._calculate_sharpe_ratio(returns),
-            'max_drawdown': self._calculate_max_drawdown(equity_curve),
-            'trade_count': len(self.trades),
-            'equity_curve': equity_curve,
-            'trades': pd.DataFrame(self.trades)
+            'equity': equity_series,
+            'total_return': (equity_series.iloc[-1] / self.initial_capital - 1) * 100,
+            'sharpe_ratio': returns.mean() / returns.std() * np.sqrt(252),  # Assuming daily data
+            'max_drawdown': (equity_series / equity_series.cummax() - 1).min() * 100,
+            'trades': self.trades,
+            'win_rate': sum(trade['pnl'] > 0 for trade in self.trades) / len(self.trades) * 100 if self.trades else 0
         }
-        
+
         return results
 
     def _calculate_sharpe_ratio(self, returns):
