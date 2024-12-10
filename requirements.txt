@@ -1,3 +1,4 @@
+alpha_vantage
 ccxt
 dash
 dash-bootstrap-components

@@ -2,22 +2,29 @@ from abc import ABC, abstractmethod
 import pandas as pd
 
 class BaseStrategy(ABC):
-    def __init__(self):
-        self.position = None
-        self.signals = []
+    def __init__(self, parameters: dict = None):
+        self.parameters = parameters or {}
 
     @abstractmethod
     def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         pass
 
     @abstractmethod
-    def calculate_position_size(self, data: pd.DataFrame) -> float:
+    def calculate_position_size(self, capital: float, current_bar: pd.Series) -> float:
         pass
 
-    def backtest(self, data: pd.DataFrame) -> pd.DataFrame:
-        signals = self.generate_signals(data)
-        return self._calculate_returns(signals, data)
+    @abstractmethod
+    def should_exit(self, position: dict, current_bar: pd.Series, signal_bar: pd.Series) -> float or None:
+        pass
 
-    def _calculate_returns(self, signals: pd.DataFrame, data: pd.DataFrame) -> pd.DataFrame:
-        # Implement common return calculation logic here
+    @abstractmethod
+    def calculate_stop_loss(self, bar: pd.Series, position_type: str) -> float:
+        pass
+
+    @abstractmethod
+    def calculate_take_profit(self, bar: pd.Series, position_type: str) -> float:
+        pass
+
+    @abstractmethod
+    def plot_strategy(self, data: pd.DataFrame, signals: pd.DataFrame, equity_curve: pd.Series):
         pass

@@ -1,9 +1,20 @@
 import sys
 from pathlib import Path
 import dash
-import dash_bootstrap_components as dbc
-from dash import html, dcc
+from dash import Dash, html, dcc
 from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
+from dash.long_callback import DiskcacheLongCallbackManager
+import diskcache
+import dash_bootstrap_components as dbc
+from flask import Flask
+import pandas as pd
+import plotly.graph_objs as go
+from datetime import datetime, timedelta
+
+server = Flask(__name__)
+# app = Dash(__name__, server=server, external_stylesheets=[dbc.themes.BOOTSTRAP])
+
 import pandas as pd
 import plotly.graph_objs as go
 from datetime import datetime, timedelta
@@ -21,8 +32,11 @@ from config.strategy_config import STRATEGY_REGISTRY
 backtester = Backtester()
 data_fetcher = DataFetcher()
 
-# Initialize Dash app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+# Initialize Dash app with long callback manager
+cache = diskcache.Cache("./cache")
+long_callback_manager = DiskcacheLongCallbackManager(cache)
+
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], long_callback_manager=long_callback_manager)
 
 # Define the layout
 app.layout = dbc.Container([
@@ -90,24 +104,30 @@ app.layout = dbc.Container([
     ])
 ], fluid=True)
 
-@app.callback(
-    [Output('equity-curve', 'figure'),
-     Output('metrics-display', 'children'),
-     Output('trades-table', 'children')],
-    [Input('run-backtest', 'n_clicks')],
-    [State('strategy-selector', 'value'),
-     State('symbol-input', 'value'),
-     State('date-range', 'start_date'),
-     State('date-range', 'end_date'),
-     State('timeframe-selector', 'value')]
+import asyncio
+
+@app.long_callback(
+    Output('equity-curve', 'figure'),
+    Output('metrics-display', 'children'),
+    Output('trades-table', 'children'),
+    Input('run-backtest', 'n_clicks'),
+    State('strategy-selector', 'value'),
+    State('symbol-input', 'value'),
+    State('date-range', 'start_date'),
+    State('date-range', 'end_date'),
+    State('timeframe-selector', 'value'),
+    running=[
+        (Output("run-backtest", "disabled"), True, False),
+    ],
+    prevent_initial_call=True
 )
 def run_backtest(n_clicks, strategy_name, symbol, start_date, end_date, timeframe):
     if n_clicks is None:
-        return {}, [], []
+        raise PreventUpdate
 
     try:
         # Fetch data
-        data = data_fetcher.fetch_data(symbol, start_date, end_date, timeframe)
+        data = asyncio.run(data_fetcher.fetch_data(symbol, start_date, end_date, 'alpha_vantage', timeframe))
 
         # Run backtest
         results = backtester.run(strategy_name, data)
@@ -135,4 +155,4 @@ def run_backtest(n_clicks, strategy_name, symbol, start_date, end_date, timefram
         return {}, html.Div(f"Error: {str(e)}", style={'color': 'red'}), []
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, host='0.0.0.0', port=8050)
