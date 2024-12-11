@@ -60,11 +60,16 @@ STRATEGY_REGISTRY = {
     #      'module': 'strategies.keltner_channel',
     #      'parameters': KeltnerChannel.parameters
     #  },
-     'MA_CROSSOVER': {
-         'class': 'MACrossover',
-         'module': 'strategies.ma_crossover',
-         'parameters': MACrossover.parameters
-     },
+    "MA_CROSSOVER": {
+        "module": "strategies.ma_crossover",
+        "class": "MACrossover",
+        "parameters": {
+            "fast_period": 10,
+            "slow_period": 30,
+            "initial_capital": 10000,
+            "risk_per_trade": 0.02
+        }
+    },
     # 'MEAN_REVERSION': {
     #     'class': 'MeanReversion',
     #     'module': 'strategies.mean_reversion',

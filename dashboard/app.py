@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 import dash
 from dash import Dash, html, dcc
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, ALL
 from dash.exceptions import PreventUpdate
 from dash.long_callback import DiskcacheLongCallbackManager
 import diskcache
@@ -23,13 +23,13 @@ project_root = str(Path(__file__).resolve().parents[1])
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from backtesting.backtest import Backtester
+from backtesting.app import create_backtesting_app
 from data.data_fetcher import DataFetcher
 from strategies.strategy_loader import StrategyLoader
 from config.strategy_config import STRATEGY_REGISTRY
 
 # Initialize components
-backtester = Backtester()
+backtesting_app = create_backtesting_app()
 data_fetcher = DataFetcher()
 strategy_loader = StrategyLoader()
 
@@ -92,6 +92,11 @@ app.layout = dbc.Container([
                 ]),
                 dbc.Row([
                     dbc.Col([
+                        html.Div(id='strategy-params')  # This will contain the dynamic strategy parameters
+                    ])
+                ]),
+                dbc.Row([
+                    dbc.Col([
                         dbc.Button('Run Backtest', id='run-backtest', color='primary')
                     ])
                 ])
@@ -117,15 +122,34 @@ import asyncio
     State('date-range', 'start_date'),
     State('date-range', 'end_date'),
     State('timeframe-selector', 'value'),
+    State({'type': 'strategy-param', 'name': ALL}, 'value'),
+    State({'type': 'strategy-param', 'name': ALL}, 'id'),
     running=[
         (Output("run-backtest", "disabled"), True, False),
     ],
     prevent_initial_call=True
 )
+def update_strategy_params(strategy_name):
+    if not strategy_name:
+        return []
 
-def run_backtest(n_clicks, strategy_name, symbol, start_date, end_date, timeframe):
+    params = backtesting_app.get_strategy_parameters(strategy_name)
+    return [
+        dbc.Row([
+            dbc.Col([
+                dbc.Label(param),
+                dbc.Input(
+                    id={'type': 'strategy-param', 'name': param},
+                    type='number',
+                    value=value,
+                    step=0.1 if isinstance(value, float) else 1
+                )
+            ])
+        ]) for param, value in params.items()
+    ]
+def run_backtest(n_clicks, strategy_name, symbol, start_date, end_date, timeframe, param_values, param_ids):
     if n_clicks is None:
-        return {}, "", []
+        return dash.no_update
 
     try:
         # Ensure all parameters are of the correct type
@@ -135,31 +159,30 @@ def run_backtest(n_clicks, strategy_name, symbol, start_date, end_date, timefram
         interval = '1d'  # or use timeframe if it's the correct format
 
         # Fetch data
-        data = data_fetcher.fetch_data_sync(symbol, start_date, end_date, source='alpha_vantage', interval=interval)
-        
+        data = data_fetcher.fetch_data_sync(symbol, start_date, end_date, interval=timeframe)
+
         if data is None or data.empty:
             raise ValueError(f"Failed to fetch data for {symbol}")
 
-        # Run backtest
-        results = backtester.run(strategy_name, data)
+        # Prepare strategy parameters
+        params = {param_id['name']: value for param_id, value in zip(param_ids, param_values)}
 
-        # Create equity curve
-        equity_curve = go.Figure(data=[go.Scatter(x=results.index, y=results['equity_curve'], mode='lines')])
-        equity_curve.update_layout(title='Equity Curve', xaxis_title='Date', yaxis_title='Equity')
+        # Run backtest with custom parameters
+        results = backtesting_app.run_backtest(strategy_name, data, params)
 
-        # Display metrics
-        metrics = html.Div([
-            html.H3('Backtest Metrics'),
-            html.P(f"Total Return: {results['total_return']:.2f}%"),
-            html.P(f"Sharpe Ratio: {results['sharpe_ratio']:.2f}"),
-            html.P(f"Max Drawdown: {results['max_drawdown']:.2f}%")
-        ])
+        # Process results and create figures
+        equity_curve = results['equity']
+        fig = go.Figure(data=[go.Scatter(x=equity_curve.index, y=equity_curve.values, mode='lines', name='Equity Curve')])
 
-        # Display trades table
-        trades = results['trades']
-        trades_table = dbc.Table.from_dataframe(trades, striped=True, bordered=True, hover=True)
+        # Create a summary of results
+        summary = f"""
+        Total Return: {results['total_return']:.2f}%
+        Sharpe Ratio: {results['sharpe_ratio']:.2f}
+        Max Drawdown: {results['max_drawdown']:.2f}%
+        Win Rate: {results['win_rate']:.2f}%
+        """
 
-        return equity_curve, metrics, trades_table
+        return fig, html.Pre(summary), results['trades']
 
     except Exception as e:
         print(f"Error in run_backtest: {str(e)}")

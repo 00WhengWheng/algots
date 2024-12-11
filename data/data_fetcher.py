@@ -1,82 +1,43 @@
 import pandas as pd
-import os
-from datetime import datetime
+import yfinance as yf
 import asyncio
-from .providers.alpha_vantage import AlphaVantageAPI
-from .providers.quandl import QuandlAPI
-from .providers.yfinance import YFinanceAPI
-from .providers.ccxt import CCXTProvider
+import logging
+import requests
+from requests.exceptions import RequestException
 
 class DataFetcher:
-    def __init__(self, exchange='binance'):
-        self.alpha_vantage = AlphaVantageAPI()
-        self.quandl = QuandlAPI()
-        self.yfinance = YFinanceAPI()
-        self.ccxt = CCXTProvider(exchange)
-        os.makedirs('data/historical', exist_ok=True)
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
 
-    def save_data(self, data: pd.DataFrame, symbol: str, source: str) -> str:
-        filename = f"data/historical/{source}_{symbol}_{datetime.now().strftime('%Y%m%d')}.csv"
-        data.to_csv(filename)
-        return filename
-            
-    import asyncio
-    
-    def fetch_data_sync(self, symbol, start_date, end_date, source='alpha_vantage', interval='1d'):
-        try:
-            if source == 'alpha_vantage':
-                data = asyncio.run(self.alpha_vantage.get_daily_data(symbol, start_date, end_date))
-            elif source == 'yfinance':
-                data = self.yfinance.get_data(symbol, start_date, end_date, interval)
-            else:
-                raise ValueError(f"Unsupported data source: {source}")
-            
-            if data is None or data.empty:
-                raise ValueError(f"No data retrieved for {symbol} from {source}")
-            
-            return data
-        except Exception as e:
-            print(f"Error fetching data: {str(e)}")
-            return None
-
-    async def fetch_alpha_vantage_data(self, symbol: str, interval: str, start_date: str, end_date: str) -> pd.DataFrame:
-        try:
-            is_crypto = '/' in symbol  # Simple check to determine if it's a cryptocurrency
-
-            if is_crypto:
-                if interval != '1d':
-                    raise ValueError("Intraday data for cryptocurrencies is not supported by Alpha Vantage")
-                data = await self.alpha_vantage.get_daily_data(symbol, start_date, end_date)
-            else:
-                if interval == '1d':
-                    data = await self.alpha_vantage.get_daily_data(symbol, start_date, end_date)
-                else:
-                    data = await self.alpha_vantage.get_intraday_data(symbol, start_date, end_date, interval)
-
-            if data is None:
-                raise ValueError("No data returned from Alpha Vantage API")
-            return data
-        except ValueError as e:
-            print(f"Error fetching Alpha Vantage data for {symbol} with interval {interval}: {e}")
-            return None
-        except Exception as e:
-            print(f"Unexpected error fetching Alpha Vantage data for {symbol} with interval {interval}: {e}")
-            return None
-
-    async def update_dataset(self, symbol: str, start_date: str, end_date: str, source: str = 'alpha_vantage', interval: str = '1d') -> str:
-        data = await self.fetch_data(symbol, start_date, end_date, source, interval)
-        if data is not None:
-            return self.save_data(data, symbol, source)
+    async def fetch_data(self, symbol: str, start_date: str, end_date: str, source: str = 'yfinance', interval: str = '1d') -> pd.DataFrame:
+        if source == 'yfinance':
+            return self.fetch_data_yfinance(symbol, start_date, end_date, interval)
         else:
-            print(f"No data retrieved for {symbol} from {source}")
-            return None
+            raise ValueError(f"Unsupported data source: {source}")
 
-    async def bulk_update(self, symbols, start_date, end_date, source='alpha_vantage', interval='1d'):
-        tasks = [self.update_dataset(symbol, start_date, end_date, source, interval) for symbol in symbols]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        for i, result in enumerate(results):
-            if isinstance(result, Exception):
-                print(f"Error updating dataset for {symbols[i]}: {result}")
-        return results
+    def fetch_data_sync(self, symbol: str, start_date: str, end_date: str, source: str = 'yfinance', interval: str = '1d') -> pd.DataFrame:
+        return asyncio.run(self.fetch_data(symbol, start_date, end_date, source, interval))
 
-# The main function remains the same
+    def fetch_data_yfinance(self, symbol: str, start_date: str, end_date: str, interval: str = '1d') -> pd.DataFrame:
+        try:
+            self._check_internet_connection()
+            ticker = yf.Ticker(symbol)
+            data = ticker.history(start=start_date, end=end_date, interval=interval)
+            if data.empty:
+                raise ValueError(f"No data available for {symbol} in the specified date range.")
+            return data
+        except RequestException as e:
+            self.logger.error(f"Network error while fetching data for {symbol}: {str(e)}")
+            raise ConnectionError(f"Network error: Unable to connect to Yahoo Finance. Please check your internet connection.")
+        except ValueError as e:
+            self.logger.error(f"Error fetching data for {symbol}: {str(e)}")
+            raise
+        except Exception as e:
+            self.logger.error(f"Unexpected error fetching data for {symbol}: {str(e)}")
+            raise RuntimeError(f"An unexpected error occurred while fetching data for {symbol}: {str(e)}")
+
+    def _check_internet_connection(self):
+        try:
+            requests.get("https://www.google.com", timeout=5)
+        except RequestException:
+            raise ConnectionError("No internet connection available.")

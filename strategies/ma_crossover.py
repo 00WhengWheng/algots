@@ -1,92 +1,60 @@
-# src/strategies/ma_crossover.py
-
-
+from .base_strategy import BaseStrategy
 import pandas as pd
 import numpy as np
-from typing import Dict, Any
-import logging
-from .base_strategy import BaseStrategy
-
-logger = logging.getLogger(__name__)
+import matplotlib.pyplot as plt
 
 class MACrossover(BaseStrategy):
-    """Moving Average Crossover Strategy"""
-    
-    parameters = {
-        'initial_capital': {
-            'type': 'number',
-            'default': 100000,
-            'description': 'Initial Capital',
-            'category': 'Account',
-            'min': 1000,
-            'max': 1000000
-        },
-        'risk_per_trade': {
-            'type': 'number',
-            'default': 0.02,
-            'description': 'Risk Per Trade (%)',
-            'category': 'Risk Management',
-            'min': 0.01,
-            'max': 0.05,
-            'step': 0.01
-        },
-        'fast_ma_period': {
-            'type': 'number',
-            'default': 10,
-            'description': 'Fast MA Period',
-            'category': 'Indicator Settings',
-            'min': 5,
-            'max': 50
-        },
-        'slow_ma_period': {
-            'type': 'number',
-            'default': 20,
-            'description': 'Slow MA Period',
-            'category': 'Indicator Settings',
-            'min': 10,
-            'max': 100
-        },
-        'ma_type': {
-            'type': 'select',
-            'default': 'sma',
-            'description': 'Moving Average Type',
-            'category': 'Indicator Settings',
-            'options': ['sma', 'ema', 'wma']
-        }
-    }
+    def __init__(self, fast_period: int = 10, slow_period: int = 30, initial_capital: float = 10000, risk_per_trade: float = 0.02):
+        super().__init__(initial_capital, risk_per_trade)
+        self.fast_period = fast_period
+        self.slow_period = slow_period
 
-    def __init__(self, parameters: Dict[str, Any] = None):
-        super().__init__(parameters)
-        self.position = None
+    def generate_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+        data['fast_ma'] = data['Close'].rolling(window=self.fast_period).mean()
+        data['slow_ma'] = data['Close'].rolling(window=self.slow_period).mean()
 
-    def calculate_ma(self, data: pd.Series, period: int, ma_type: str = 'sma') -> pd.Series:
-        if ma_type == 'ema':
-            return data.ewm(span=period, adjust=False).mean()
-        elif ma_type == 'wma':
-            weights = np.arange(1, period + 1)
-            return data.rolling(period).apply(
-                lambda x: np.dot(x, weights) / weights.sum(), raw=True
-            )
-        else:  # sma
-            return data.rolling(window=period).mean()
+        data['Signal'] = np.where(data['fast_ma'] > data['slow_ma'], 1, 0)
+        data['Signal'] = np.where(data['fast_ma'] < data['slow_ma'], -1, data['Signal'])
 
-    def generate_signals(self, data: pd.DataFrame) -> pd.Series:
-        fast_ma = self.calculate_ma(
-            data['Close'], 
-            self.params['fast_ma_period'], 
-            self.params['ma_type']
-        )
-        slow_ma = self.calculate_ma(
-            data['Close'], 
-            self.params['slow_ma_period'], 
-            self.params['ma_type']
-        )
-        
-        signals = pd.Series(0, index=data.index)
-        signals[fast_ma > slow_ma] = 1
-        signals[fast_ma < slow_ma] = -1
-        
-        return signals
+        return data
 
-    def calculate_position_size(self, price: float) -> float:
-        return self.params['initial_capital'] * self.params['risk_per_trade'] / price
+    def calculate_position_size(self, capital: float, current_price: float) -> float:
+        # Calculate the position size based on the risk per trade
+        risk_amount = capital * self.risk_per_trade
+        stop_loss_percent = 0.02  # 2% stop loss
+        shares = risk_amount / (current_price * stop_loss_percent)
+        return round(shares)
+    def calculate_stop_loss(self, entry_price: float, position: int) -> float:
+        # Simple example: 2% stop loss
+        return entry_price * (1 - 0.02 * position)
+
+    def calculate_take_profit(self, entry_price: float, position: int) -> float:
+        # Simple example: 4% take profit
+        return entry_price * (1 + 0.04 * position)
+
+    def should_exit(self, current_price: float, entry_price: float, position: int, stop_loss: float, take_profit: float) -> bool:
+        if position > 0:
+            return current_price <= stop_loss or current_price >= take_profit
+        elif position < 0:
+            return current_price >= stop_loss or current_price <= take_profit
+        return False
+
+    def plot_strategy(self, data: pd.DataFrame):
+        plt.figure(figsize=(12, 6))
+        plt.plot(data.index, data['Close'], label='Close Price')
+        plt.plot(data.index, data['fast_ma'], label=f'{self.fast_period} MA')
+        plt.plot(data.index, data['slow_ma'], label=f'{self.slow_period} MA')
+
+        plt.plot(data[data['Signal'] == 1].index, 
+                 data['Close'][data['Signal'] == 1], 
+                 '^', markersize=10, color='g', label='Buy Signal')
+
+        plt.plot(data[data['Signal'] == -1].index, 
+                 data['Close'][data['Signal'] == -1], 
+                 'v', markersize=10, color='r', label='Sell Signal')
+
+        plt.title('MA Crossover Strategy')
+        plt.xlabel('Date')
+        plt.ylabel('Price')
+        plt.legend()
+        plt.show()
