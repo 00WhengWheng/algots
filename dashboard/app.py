@@ -129,24 +129,6 @@ import asyncio
     ],
     prevent_initial_call=True
 )
-def update_strategy_params(strategy_name):
-    if not strategy_name:
-        return []
-
-    params = backtesting_app.get_strategy_parameters(strategy_name)
-    return [
-        dbc.Row([
-            dbc.Col([
-                dbc.Label(param),
-                dbc.Input(
-                    id={'type': 'strategy-param', 'name': param},
-                    type='number',
-                    value=value,
-                    step=0.1 if isinstance(value, float) else 1
-                )
-            ])
-        ]) for param, value in params.items()
-    ]
 def run_backtest(n_clicks, strategy_name, symbol, start_date, end_date, timeframe, param_values, param_ids):
     if n_clicks is None:
         return dash.no_update
@@ -168,9 +150,12 @@ def run_backtest(n_clicks, strategy_name, symbol, start_date, end_date, timefram
         params = {param_id['name']: value for param_id, value in zip(param_ids, param_values)}
 
         # Run backtest with custom parameters
-        results = backtesting_app.run_backtest(strategy_name, data, params)
+        results = backtesting_app.run_backtest(strategy_name, data, params, end_date=end_date)
 
         # Process results and create figures
+        if 'equity' not in results:
+            raise ValueError("Backtest results do not contain 'equity' data")
+
         equity_curve = results['equity']
         fig = go.Figure(data=[go.Scatter(x=equity_curve.index, y=equity_curve.values, mode='lines', name='Equity Curve')])
 

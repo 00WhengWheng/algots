@@ -24,6 +24,7 @@ class MACrossover(BaseStrategy):
         stop_loss_percent = 0.02  # 2% stop loss
         shares = risk_amount / (current_price * stop_loss_percent)
         return round(shares)
+
     def calculate_stop_loss(self, entry_price: float, position: int) -> float:
         # Simple example: 2% stop loss
         return entry_price * (1 - 0.02 * position)

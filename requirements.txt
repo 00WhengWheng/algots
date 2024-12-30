@@ -2,6 +2,7 @@ alpha_vantage
 ccxt
 dash
 dash-bootstrap-components
+diskcache
 matplotlib
 plotly
 pandas
